@@ -1,0 +1,42 @@
+# systemd jedinica za backend.
+#
+# Kopira se u /etc/systemd/system/xlamp-ng.service pa:
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now xlamp-ng
+#
+# Log se cita s: journalctl -u xlamp-ng -f
+
+[Unit]
+Description=X-lamp backend (REST API, Socket.IO, ChirpStack MQTT most)
+# Baza mora biti gore prije nego Prisma otvori pool.
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=xlamp
+Group=xlamp
+WorkingDirectory=/opt/xlamp-ng/backend
+
+# dotenv cita .env iz WorkingDirectory, pa se varijable ne moraju duplirati ovdje.
+ExecStart=/usr/bin/node src/index.js
+
+# Pad procesa ne smije ostaviti sustav bez MQTT pretplate.
+Restart=always
+RestartSec=5
+
+Environment=NODE_ENV=production
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=xlamp-ng
+
+# Servisu treba samo vlastiti direktorij i mreza.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/xlamp-ng/backend
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,75 @@
+<div class="auth-omot d-flex align-items-center justify-content-center p-3">
+  <div class="card auth-kartica">
+    <div class="card-body p-4">
+
+      <div class="text-center mb-4">
+        <span class="d-block fs-1 lh-1 mb-2">💡</span>
+        <h1 class="h4 mb-1">Novi račun</h1>
+        <p class="text-body-secondary small mb-0">Registracija u sustav X-lamp</p>
+      </div>
+
+      <form [formGroup]="forma" (ngSubmit)="posalji()">
+        @if (greska()) {
+          <div class="alert alert-danger">{{ greska() }}</div>
+        }
+
+        <div class="mb-3">
+          <label class="form-label" for="username">Korisničko ime</label>
+          <input id="username" class="form-control" formControlName="username" autocomplete="username"
+                 [class.is-invalid]="forma.controls.username.touched && forma.controls.username.invalid" />
+          @if (forma.controls.username.touched && forma.controls.username.invalid) {
+            <div class="poruka-greske">
+              @if (forma.controls.username.hasError('required')) { Korisničko ime je obavezno. }
+              @else if (forma.controls.username.hasError('minlength')) { Najmanje 3 znaka. }
+              @else if (forma.controls.username.hasError('pattern')) { Dopušteni su slova, brojke, točka, crtica i podvlaka. }
+            </div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="email">E-mail</label>
+          <input id="email" type="email" class="form-control" formControlName="email" autocomplete="email"
+                 [class.is-invalid]="forma.controls.email.touched && forma.controls.email.invalid" />
+          @if (forma.controls.email.touched && forma.controls.email.invalid) {
+            <div class="poruka-greske">
+              @if (forma.controls.email.hasError('required')) { E-mail je obavezan. }
+              @else { Neispravna e-mail adresa. }
+            </div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="password">Lozinka</label>
+          <input id="password" type="password" class="form-control" formControlName="password"
+                 autocomplete="new-password"
+                 [class.is-invalid]="forma.controls.password.touched && forma.controls.password.invalid" />
+          @if (forma.controls.password.touched && forma.controls.password.invalid) {
+            <div class="poruka-greske">
+              @if (forma.controls.password.hasError('required')) { Lozinka je obavezna. }
+              @else { Lozinka mora imati barem 8 znakova. }
+            </div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="potvrda">Ponovite lozinku</label>
+          <input id="potvrda" type="password" class="form-control" formControlName="potvrda"
+                 autocomplete="new-password"
+                 [class.is-invalid]="forma.controls.potvrda.touched && forma.hasError('neJednake')" />
+          @if (forma.controls.potvrda.touched && forma.hasError('neJednake')) {
+            <div class="poruka-greske">Lozinke se ne podudaraju.</div>
+          }
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 mt-2" [disabled]="radi()">
+          {{ radi() ? 'Registracija…' : 'Registriraj se' }}
+        </button>
+      </form>
+
+      <p class="text-center text-body-secondary small mt-4 mb-0">
+        Već imate račun? <a routerLink="/prijava">Prijavite se</a>
+      </p>
+
+    </div>
+  </div>
+</div>

@@ -1,0 +1,65 @@
+<h1 class="h4 mb-3">Karta</h1>
+
+@if (greska()) { <div class="alert alert-danger">{{ greska() }}</div> }
+
+<div class="karta-omot card">
+  <div id="karta"></div>
+
+  <div class="legenda card p-2">
+    <div class="d-flex align-items-center gap-2"><span class="tocka ONLINE"></span> Na mreži</div>
+    <div class="d-flex align-items-center gap-2"><span class="tocka OFFLINE"></span> Bez veze</div>
+    <div class="d-flex align-items-center gap-2"><span class="tocka ERROR"></span> Greška</div>
+    <div class="d-flex align-items-center gap-2"><span class="tocka UNKNOWN"></span> Nepoznato</div>
+  </div>
+
+  @if (odabrana(); as lampa) {
+    <div class="panel card">
+      <div class="card-header d-flex align-items-center justify-content-between gap-2">
+        <h2 class="h6 mb-0">{{ lampa.name }}</h2>
+        <button class="btn btn-secondary btn-sm" (click)="zatvoriPanel()">Zatvori</button>
+      </div>
+      <div class="card-body">
+        <dl class="row mb-0 small">
+          <dt class="col-6 fw-normal text-body-secondary">Stanje</dt>
+          <dd class="col-6 mb-2">
+            <span class="badge" [class]="lampa.status">{{ lampa.status }}</span>
+          </dd>
+
+          <dt class="col-6 fw-normal text-body-secondary">devEUI</dt>
+          <dd class="col-6 mb-2 hex">{{ lampa.devEui }}</dd>
+
+          <dt class="col-6 fw-normal text-body-secondary">Svjetlina</dt>
+          <dd class="col-6 mb-2">{{ lampa.currentBrightness | brightness }}</dd>
+
+          <dt class="col-6 fw-normal text-body-secondary">Zadnje javljanje</dt>
+          <dd class="col-6 mb-2">{{ lampa.lastSeen | lastSeen }}</dd>
+
+          <dt class="col-6 fw-normal text-body-secondary">Lokacija</dt>
+          <dd class="col-6 mb-3 text-body-secondary">{{ lampa.latitude }}, {{ lampa.longitude }}</dd>
+        </dl>
+
+        <a class="btn btn-primary btn-sm w-100" [routerLink]="['/lampe', lampa.id]">
+          Otvori detalje
+        </a>
+      </div>
+    </div>
+  }
+</div>
+
+@if (!ucitavanje() && lampe().length > 0) {
+  <div class="card mt-3">
+    <div class="card-header">
+      <h2 class="h6 mb-0">Svjetiljke na karti ({{ lampe().length }})</h2>
+    </div>
+    <div class="card-body popis">
+      @for (lampa of lampe(); track lampa.id) {
+        <button class="stavka btn btn-secondary btn-sm d-flex align-items-center gap-2"
+                (click)="fokusiraj(lampa)">
+          <span class="tocka" [class]="lampa.status"></span>
+          <span>{{ lampa.name }}</span>
+          <span class="text-body-secondary">{{ lampa.lastSeen | lastSeen }}</span>
+        </button>
+      }
+    </div>
+  </div>
+}

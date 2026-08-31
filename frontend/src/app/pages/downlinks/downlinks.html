@@ -1,0 +1,148 @@
+<h1 class="h4 mb-3">Naredbe</h1>
+
+@if (poruka()) { <div class="alert alert-success">{{ poruka() }}</div> }
+@if (greska()) { <div class="alert alert-danger">{{ greska() }}</div> }
+
+<div class="row g-3 align-items-start">
+
+  <div class="col-xl-4">
+    <div class="card">
+      <div class="card-header d-flex align-items-center justify-content-between gap-2">
+        <h2 class="h6 mb-0">{{ uredujeId() ? 'Izmjena naredbe' : 'Nova naredba' }}</h2>
+        @if (uredujeId()) {
+          <span class="badge info">#{{ uredujeId() }}</span>
+        }
+      </div>
+      <div class="card-body">
+        <form [formGroup]="forma" (ngSubmit)="posalji()">
+
+          <div class="mb-3">
+            <label class="form-label" for="lampId">Svjetiljka</label>
+            <select id="lampId" class="form-select" formControlName="lampId">
+              @for (lampa of lampe(); track lampa.id) {
+                <option [value]="lampa.id">{{ lampa.name }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" for="command">Naredba</label>
+            <select id="command" class="form-select" formControlName="command">
+              @for (n of naredbe; track n.vrijednost) {
+                <option [value]="n.vrijednost">{{ n.naziv }}</option>
+              }
+            </select>
+          </div>
+
+          @if (trebaArgument) {
+            <div class="mb-3">
+              <label class="form-label" for="argument">
+                Svjetlina: {{ forma.controls.argument.value }} %
+              </label>
+              <input id="argument" type="range" class="form-range" min="0" max="100" step="1"
+                     formControlName="argument" />
+            </div>
+          }
+
+          @if (odabranaNaredba?.mijenjaSvjetlo) {
+            <div class="alert alert-info">
+              Ova naredba mijenja stanje stvarne svjetiljke na ulici.
+              Poslani okvir se ne može opozvati.
+            </div>
+          }
+
+          @if (cekaPotvrdu()) {
+            <div class="alert alert-danger">
+              <strong>Potvrdite:</strong> {{ odabranaNaredba?.naziv }} — ovo će stvarno
+              promijeniti rasvjetu.
+            </div>
+            <div class="d-flex justify-content-end gap-2">
+              <button type="button" class="btn btn-secondary" (click)="odustani()">Odustani</button>
+              <button type="submit" class="btn btn-outline-danger" [disabled]="salje()">
+                Da, pošalji
+              </button>
+            </div>
+          } @else if (uredujeId()) {
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-secondary flex-fill" (click)="odustani()">
+                Odustani
+              </button>
+              <button type="submit" class="btn btn-primary flex-fill" [disabled]="salje()">
+                {{ salje() ? 'Spremanje…' : 'Spremi izmjenu' }}
+              </button>
+            </div>
+          } @else {
+            <button type="submit" class="btn btn-primary w-100"
+                    [disabled]="salje() || lampe().length === 0">
+              {{ salje() ? 'Slanje…' : 'Pošalji' }}
+            </button>
+          }
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-8">
+    <div class="card">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <h2 class="h6 mb-0">Povijest</h2>
+        <button class="btn btn-secondary btn-sm" (click)="ucitaj()">Osvježi</button>
+      </div>
+
+      @if (ucitavanje()) {
+        <div class="prazno">Učitavanje…</div>
+      } @else if (povijest().length === 0) {
+        <div class="prazno">Još nije poslana nijedna naredba.</div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead>
+              <tr>
+                <th>Svjetiljka</th>
+                <th>Naredba</th>
+                <th>Payload</th>
+                <th>Stanje</th>
+                <th>Kad</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (d of povijest(); track d.id) {
+                <tr>
+                  <td>{{ d.lamp?.name }}</td>
+                  <td>
+                    {{ nazivNaredbe(d.command) }}
+                    @if (d.argument !== null) {
+                      <span class="text-body-secondary">({{ d.argument }} %)</span>
+                    }
+                  </td>
+                  <td class="hex">{{ d.payload }}:{{ d.port }}</td>
+                  <td>
+                    <span class="badge" [class]="stanje(d).klasa">{{ stanje(d).tekst }}</span>
+                    @if (d.error) { <div class="greska-tekst">{{ d.error }}</div> }
+                  </td>
+                  <td class="text-body-secondary text-nowrap">{{ d.createdAt | lastSeen }}</td>
+                  <td>
+                    <!-- Poslana naredba je otisla na radio i nema je natrag, pa se
+                         ne nudi ni izmjena ni brisanje. -->
+                    @if (promjenjiva(d)) {
+                      <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-secondary btn-sm" (click)="uredi(d)">Uredi</button>
+                        <button class="btn btn-secondary btn-sm" (click)="otkazi(d.id)">Otkaži</button>
+                        <button class="btn btn-outline-danger btn-sm" (click)="obrisi(d.id)">Obriši</button>
+                      </div>
+                    } @else {
+                      <span class="text-body-secondary">—</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
+
+</div>

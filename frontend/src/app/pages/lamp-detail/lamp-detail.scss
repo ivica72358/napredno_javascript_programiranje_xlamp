@@ -1,0 +1,15 @@
+/* Raspored drzi Bootstrapov grid; ovdje samo sitnice. */
+
+.breadcrumb {
+  --bs-breadcrumb-divider-color: var(--xl-prigusen);
+  --bs-breadcrumb-item-active-color: var(--xl-tekst);
+}
+
+/* Klizac svjetline u boji naglaska, da se poklopi s ostatkom sucelja. */
+.form-range::-webkit-slider-thumb {
+  background: var(--xl-naglasak);
+}
+
+.form-range::-moz-range-thumb {
+  background: var(--xl-naglasak);
+}

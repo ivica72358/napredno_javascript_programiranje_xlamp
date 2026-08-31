@@ -1,0 +1,279 @@
+/* Tema aplikacije.
+ *
+ * Bootstrap donosi komponente i raspored; ovdje se samo prebacuje na paletu
+ * projekta. Sve ide kroz Bootstrapove CSS varijable, pa se ne prepisuju
+ * njegova pravila i nadogradnja verzije nista ne lomi.
+ *
+ * Zasto varijable po komponenti, a ne samo --bs-primary: Bootstrap 5.3 boje
+ * gumba fiksira pri prevodenju (.btn-primary ima vlastiti --bs-btn-bg), pa
+ * promjena --bs-primary sama po sebi ne dira gumbe.
+ */
+
+:root,
+[data-bs-theme='dark'] {
+  --xl-pozadina: #1a2035;
+  --xl-povrsina: #202940;
+  --xl-povrsina-2: #29334f;
+  --xl-rub: #2f3a58;
+  --xl-tekst: #e8ecf5;
+  --xl-prigusen: #93a0bd;
+  --xl-naglasak: #ffa726;
+  --xl-naglasak-tamni: #e8931a;
+
+  --xl-ok: #4caf50;
+  --xl-upozorenje: #ffb400;
+  --xl-greska: #f2545b;
+  --xl-info: #48abe0;
+
+  /* ── Bootstrapove osnove ─────────────────────────────────────────────── */
+
+  --bs-body-bg: var(--xl-pozadina);
+  --bs-body-color: var(--xl-tekst);
+  --bs-body-font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --bs-body-font-size: 0.875rem;
+
+  --bs-border-color: var(--xl-rub);
+  --bs-border-radius: 8px;
+  --bs-border-radius-sm: 6px;
+
+  --bs-secondary-color: var(--xl-prigusen);
+  --bs-tertiary-bg: var(--xl-povrsina-2);
+  --bs-emphasis-color: #ffffff;
+
+  --bs-link-color: var(--xl-naglasak);
+  --bs-link-hover-color: var(--xl-naglasak-tamni);
+
+  --bs-primary: var(--xl-naglasak);
+  --bs-primary-rgb: 255, 167, 38;
+  --bs-danger: var(--xl-greska);
+  --bs-danger-rgb: 242, 84, 91;
+  --bs-success: var(--xl-ok);
+  --bs-success-rgb: 76, 175, 80;
+  --bs-warning: var(--xl-upozorenje);
+  --bs-info: var(--xl-info);
+
+  --bs-focus-ring-color: rgba(255, 167, 38, 0.3);
+}
+
+body {
+  min-height: 100vh;
+}
+
+/* ── Kartice ───────────────────────────────────────────────────────────── */
+
+.card {
+  --bs-card-bg: var(--xl-povrsina);
+  --bs-card-border-color: var(--xl-rub);
+  --bs-card-cap-bg: transparent;
+  --bs-card-cap-padding-y: 0.85rem;
+  --bs-card-spacer-y: 1rem;
+}
+
+.card-header {
+  border-bottom-color: var(--xl-rub);
+}
+
+/* ── Gumbi ─────────────────────────────────────────────────────────────── */
+
+.btn-primary {
+  --bs-btn-color: #1a2035;
+  --bs-btn-bg: var(--xl-naglasak);
+  --bs-btn-border-color: var(--xl-naglasak);
+  --bs-btn-hover-color: #1a2035;
+  --bs-btn-hover-bg: var(--xl-naglasak-tamni);
+  --bs-btn-hover-border-color: var(--xl-naglasak-tamni);
+  --bs-btn-active-bg: var(--xl-naglasak-tamni);
+  --bs-btn-active-border-color: var(--xl-naglasak-tamni);
+  --bs-btn-active-color: #1a2035;
+  --bs-btn-disabled-color: #1a2035;
+  --bs-btn-disabled-bg: var(--xl-naglasak);
+  --bs-btn-disabled-border-color: var(--xl-naglasak);
+  font-weight: 600;
+}
+
+.btn-secondary {
+  --bs-btn-color: var(--xl-tekst);
+  --bs-btn-bg: var(--xl-povrsina-2);
+  --bs-btn-border-color: var(--xl-rub);
+  --bs-btn-hover-color: var(--xl-tekst);
+  --bs-btn-hover-bg: var(--xl-rub);
+  --bs-btn-hover-border-color: var(--xl-rub);
+  --bs-btn-active-bg: var(--xl-rub);
+  --bs-btn-active-border-color: var(--xl-rub);
+}
+
+.btn-outline-danger {
+  --bs-btn-color: var(--xl-greska);
+  --bs-btn-border-color: var(--xl-greska);
+  --bs-btn-hover-bg: var(--xl-greska);
+  --bs-btn-hover-border-color: var(--xl-greska);
+  --bs-btn-hover-color: #ffffff;
+  --bs-btn-active-bg: var(--xl-greska);
+  --bs-btn-active-border-color: var(--xl-greska);
+}
+
+/* ── Obrasci ───────────────────────────────────────────────────────────── */
+
+.form-control,
+.form-select {
+  background-color: var(--xl-pozadina);
+  border-color: var(--xl-rub);
+  color: var(--xl-tekst);
+}
+
+.form-control:focus,
+.form-select:focus {
+  background-color: var(--xl-pozadina);
+  border-color: var(--xl-naglasak);
+  color: var(--xl-tekst);
+  box-shadow: 0 0 0 0.2rem var(--bs-focus-ring-color);
+}
+
+.form-control::placeholder {
+  color: var(--xl-prigusen);
+  opacity: 0.65;
+}
+
+.form-label {
+  color: var(--xl-prigusen);
+  margin-bottom: 0.35rem;
+  font-size: 0.8125rem;
+}
+
+/* Bootstrap prikazuje .invalid-feedback tek uz .is-invalid na polju; ovdje se
+ * poruka ispisuje i kad je polje samo dotaknuto, pa treba biti vidljiva sama. */
+.poruka-greske {
+  margin-top: 0.3rem;
+  color: var(--xl-greska);
+  font-size: 0.75rem;
+}
+
+/* ── Tablice ───────────────────────────────────────────────────────────── */
+
+.table {
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--xl-tekst);
+  --bs-table-border-color: var(--xl-rub);
+  --bs-table-hover-bg: var(--xl-povrsina-2);
+  --bs-table-hover-color: var(--xl-tekst);
+  margin-bottom: 0;
+}
+
+.table > thead th {
+  color: var(--xl-prigusen);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+  border-bottom-color: var(--xl-rub);
+}
+
+.table > tbody td {
+  vertical-align: middle;
+  border-bottom-color: var(--xl-rub);
+}
+
+/* Hex payloadi i devEUI - monospace da se znamenke poravnaju po stupcu. */
+.hex {
+  font-family: 'Cascadia Code', Consolas, ui-monospace, monospace;
+  font-size: 0.75rem;
+  color: var(--xl-prigusen);
+}
+
+/* ── Oznake stanja ─────────────────────────────────────────────────────── */
+
+.badge {
+  --bs-badge-font-size: 0.6875rem;
+  --bs-badge-font-weight: 600;
+  --bs-badge-padding-x: 0.65em;
+  --bs-badge-padding-y: 0.4em;
+  --bs-badge-border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Klasa se vezuje na vrijednost statusa iz API-ja, pa se predlozak ne mora
+ * baviti preslikavanjem statusa u boju. */
+.badge.ONLINE,
+.badge.odlican,
+.badge.uspjeh {
+  background-color: rgba(76, 175, 80, 0.16);
+  color: var(--xl-ok);
+}
+
+.badge.OFFLINE,
+.badge.kritican {
+  background-color: rgba(242, 84, 91, 0.16);
+  color: var(--xl-greska);
+}
+
+.badge.ERROR,
+.badge.slab {
+  background-color: rgba(255, 180, 0, 0.16);
+  color: var(--xl-upozorenje);
+}
+
+.badge.UNKNOWN,
+.badge.nepoznat {
+  background-color: rgba(147, 160, 189, 0.16);
+  color: var(--xl-prigusen);
+}
+
+.badge.dobar,
+.badge.info {
+  background-color: rgba(72, 171, 224, 0.16);
+  color: var(--xl-info);
+}
+
+/* ── Obavijesti ────────────────────────────────────────────────────────── */
+
+.alert {
+  --bs-alert-border-radius: 6px;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.8125rem;
+}
+
+.alert-danger {
+  --bs-alert-bg: rgba(242, 84, 91, 0.12);
+  --bs-alert-border-color: rgba(242, 84, 91, 0.4);
+  --bs-alert-color: #ff9b9f;
+}
+
+.alert-success {
+  --bs-alert-bg: rgba(76, 175, 80, 0.12);
+  --bs-alert-border-color: rgba(76, 175, 80, 0.4);
+  --bs-alert-color: #92d894;
+}
+
+.alert-info {
+  --bs-alert-bg: rgba(72, 171, 224, 0.12);
+  --bs-alert-border-color: rgba(72, 171, 224, 0.4);
+  --bs-alert-color: #9ad4f0;
+}
+
+.alert-warning {
+  --bs-alert-bg: rgba(255, 180, 0, 0.12);
+  --bs-alert-border-color: rgba(255, 180, 0, 0.4);
+  --bs-alert-color: #ffd166;
+}
+
+/* ── Dijalozi ──────────────────────────────────────────────────────────── */
+
+/* Modal se otvara Angularovim @if-om, bez Bootstrapovog JS-a: klase .show i
+ * display postavlja predlozak. Bootstrap ostaje izvor izgleda, a stanje drzi
+ * Angular - manje pomicnih dijelova nego interop s bootstrap.Modal. */
+.modal {
+  --bs-modal-bg: var(--xl-povrsina);
+  --bs-modal-border-color: var(--xl-rub);
+  --bs-modal-header-border-color: var(--xl-rub);
+  --bs-modal-footer-border-color: var(--xl-rub);
+}
+
+/* ── Pomocno ───────────────────────────────────────────────────────────── */
+
+.prazno {
+  padding: 2.25rem;
+  text-align: center;
+  color: var(--xl-prigusen);
+}

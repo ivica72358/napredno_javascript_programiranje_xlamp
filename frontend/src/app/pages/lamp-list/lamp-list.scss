@@ -1,0 +1,11 @@
+/* Raspored i komponente dolaze iz Bootstrapa; ovdje ostaje samo ono sto on nema. */
+
+.pretraga {
+  width: 260px;
+}
+
+@media (max-width: 520px) {
+  .pretraga {
+    width: 100%;
+  }
+}

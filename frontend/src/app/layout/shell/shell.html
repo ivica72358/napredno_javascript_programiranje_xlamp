@@ -1,0 +1,57 @@
+<div class="d-flex min-vh-100">
+
+  <aside class="bocna d-flex flex-column flex-shrink-0 border-end">
+
+    <div class="d-flex align-items-center gap-2 p-3 border-bottom">
+      <span class="fs-4">💡</span>
+      <div class="lh-sm">
+        <div class="fw-semibold">X-lamp</div>
+        <small class="text-body-secondary">Javna rasvjeta</small>
+      </div>
+    </div>
+
+    <nav class="nav nav-pills flex-column gap-1 p-2">
+      @for (veza of veze(); track veza.put) {
+        <a class="nav-link d-flex align-items-center gap-2"
+           [routerLink]="veza.put"
+           routerLinkActive="active">
+          <span>{{ veza.ikona }}</span>
+          <span>{{ veza.naziv }}</span>
+        </a>
+      }
+    </nav>
+
+    <div class="mt-auto d-flex flex-column gap-3 p-3 border-top">
+      <!-- Stanje veze je ovdje jer je odsutnost telemetrije inace nevidljiva:
+           liste jednostavno prestanu rasti, a to izgleda kao da se nista ne
+           dogada, a ne kao kvar. -->
+      <div class="veza d-flex align-items-center gap-2 small"
+           [class.spojen]="realtime.connected()">
+        <span class="tockica"></span>
+        {{ realtime.connected() ? 'Uživo' : 'Bez veze' }}
+      </div>
+
+      <div class="lh-sm">
+        <div class="fw-medium">{{ auth.user()?.username }}</div>
+        <small class="text-body-secondary">
+          {{ auth.user()?.role === 'ADMIN' ? 'Administrator' : 'Korisnik' }}
+        </small>
+      </div>
+
+      <button class="btn btn-secondary btn-sm" (click)="auth.logout()">Odjava</button>
+    </div>
+
+  </aside>
+
+  <main class="flex-grow-1 p-4 overflow-auto">
+    <!-- U dry-run nacinu naredbe nikad ne odu na mrezu. To mora biti vidljivo,
+         inace zapisana naredba izgleda isto kao poslana. -->
+    @if (system.dryRun()) {
+      <div class="alert alert-warning">
+        Probni način rada — naredbe se zapisuju, ali se ne šalju uređajima.
+      </div>
+    }
+    <router-outlet />
+  </main>
+
+</div>

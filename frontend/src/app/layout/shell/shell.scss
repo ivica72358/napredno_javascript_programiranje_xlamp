@@ -1,0 +1,55 @@
+/* Raspored drzi Bootstrap; ovdje ostaje samo ono sto on nema. */
+
+.bocna {
+  width: 230px;
+  background: var(--xl-povrsina);
+}
+
+/* Bootstrapov .nav-link je u tamnoj temi presvijetao za neaktivnu stavku -
+ * bez ovoga se aktivna i neaktivna slabo razlikuju. */
+.nav-pills {
+  --bs-nav-link-color: var(--xl-prigusen);
+  --bs-nav-link-hover-color: var(--xl-tekst);
+  --bs-nav-pills-link-active-bg: var(--xl-naglasak);
+  --bs-nav-pills-link-active-color: #1a2035;
+}
+
+.nav-link:hover:not(.active) {
+  background: var(--xl-povrsina-2);
+}
+
+/* ── Pokazatelj zive veze ────────────────────────────────────────────────── */
+
+.veza {
+  color: var(--xl-prigusen);
+}
+
+.tockica {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--xl-greska);
+  flex-shrink: 0;
+}
+
+.veza.spojen {
+  color: var(--xl-ok);
+}
+
+.veza.spojen .tockica {
+  background: var(--xl-ok);
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+}
+
+@media (max-width: 768px) {
+  .bocna {
+    width: 64px;
+  }
+
+  /* Na uskom ekranu ostaju samo ikone; nazivi i podnozje bi pojeli sirinu. */
+  .bocna .nav-link span:last-child,
+  .bocna .lh-sm,
+  .bocna .veza {
+    display: none;
+  }
+}

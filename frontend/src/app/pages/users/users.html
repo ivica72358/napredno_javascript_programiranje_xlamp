@@ -1,0 +1,189 @@
+<h1 class="h4 mb-3">{{ auth.isAdmin() ? 'Korisnici' : 'Moj profil' }}</h1>
+
+@if (poruka()) { <div class="alert alert-success">{{ poruka() }}</div> }
+@if (greska() && obrazacZa() === null) { <div class="alert alert-danger">{{ greska() }}</div> }
+
+@if (!auth.isAdmin()) {
+  <div class="alert alert-info">
+    Popis svih korisnika vidi samo administrator. Ovdje možete urediti vlastiti račun.
+  </div>
+}
+
+<div class="card">
+  <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <h2 class="h6 mb-0">{{ auth.isAdmin() ? 'Svi korisnici' : 'Podaci računa' }}</h2>
+    @if (auth.isAdmin()) {
+      <button class="btn btn-primary btn-sm" (click)="novi()">+ Novi korisnik</button>
+    }
+  </div>
+
+  @if (ucitavanje()) {
+    <div class="prazno">Učitavanje…</div>
+  } @else if (korisnici().length === 0) {
+    <div class="prazno">Nema korisnika.</div>
+  } @else {
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Korisničko ime</th>
+            <th>E-mail</th>
+            <th>Uloga</th>
+            <th>Svjetiljke</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (k of korisnici(); track k.id) {
+            <tr>
+              <td>
+                {{ k.username }}
+                @if (k.id === auth.user()?.id) { <span class="badge info ms-2">vi</span> }
+              </td>
+              <td class="text-body-secondary">{{ k.email }}</td>
+              <td>
+                <span class="badge" [class]="k.role === 'ADMIN' ? 'ONLINE' : 'UNKNOWN'">
+                  {{ k.role === 'ADMIN' ? 'Administrator' : 'Korisnik' }}
+                </span>
+              </td>
+              <td class="text-body-secondary">{{ k._count?.lamps ?? 0 }}</td>
+              <td>
+                @if (brisemId() === k.id) {
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="text-body-secondary small">Obrisati i sve njegove svjetiljke?</span>
+                    <button class="btn btn-outline-danger btn-sm" (click)="obrisi(k.id)">Da</button>
+                    <button class="btn btn-secondary btn-sm" (click)="odustaniOdBrisanja()">Ne</button>
+                  </div>
+                } @else {
+                  <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-secondary btn-sm" (click)="uredi(k)">Uredi</button>
+                    @if (smijeObrisati(k)) {
+                      <button class="btn btn-outline-danger btn-sm"
+                              (click)="potvrdiBrisanje(k.id)">Obriši</button>
+                    }
+                  </div>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+@if (obrazacZa() !== null) {
+  <div class="modal-backdrop fade show"></div>
+  <div class="modal fade show d-block" tabindex="-1" (click)="zatvori()">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"
+         (click)="$event.stopPropagation()">
+      <div class="modal-content">
+
+        <div class="modal-header">
+          <h2 class="modal-title h5">
+            {{ obrazacZa() === 0 ? 'Novi korisnik' : 'Uredi korisnika' }}
+          </h2>
+          <button type="button" class="btn-close" aria-label="Zatvori" (click)="zatvori()"></button>
+        </div>
+
+        @if (obrazacZa() === 0) {
+          <form [formGroup]="novaForma" (ngSubmit)="spremi()">
+            <div class="modal-body">
+              @if (greska()) { <div class="alert alert-danger">{{ greska() }}</div> }
+
+              <div class="mb-3">
+                <label class="form-label" for="username">Korisničko ime</label>
+                <input id="username" class="form-control" formControlName="username"
+                       [class.is-invalid]="novaForma.controls.username.touched && novaForma.controls.username.invalid" />
+                @if (novaForma.controls.username.touched && novaForma.controls.username.invalid) {
+                  <div class="poruka-greske">
+                    @if (novaForma.controls.username.hasError('required')) { Korisničko ime je obavezno. }
+                    @else if (novaForma.controls.username.hasError('minlength')) { Najmanje 3 znaka. }
+                    @else { Dopušteni su slova, brojke, točka, crtica i podvlaka. }
+                  </div>
+                }
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label" for="email">E-mail</label>
+                <input id="email" type="email" class="form-control" formControlName="email"
+                       [class.is-invalid]="novaForma.controls.email.touched && novaForma.controls.email.invalid" />
+                @if (novaForma.controls.email.touched && novaForma.controls.email.invalid) {
+                  <div class="poruka-greske">Neispravna e-mail adresa.</div>
+                }
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label" for="password">Lozinka</label>
+                <input id="password" type="password" class="form-control" formControlName="password"
+                       autocomplete="new-password"
+                       [class.is-invalid]="novaForma.controls.password.touched && novaForma.controls.password.invalid" />
+                @if (novaForma.controls.password.touched && novaForma.controls.password.invalid) {
+                  <div class="poruka-greske">Lozinka mora imati barem 8 znakova.</div>
+                }
+              </div>
+
+              <div class="mb-0">
+                <label class="form-label" for="role">Uloga</label>
+                <select id="role" class="form-select" formControlName="role">
+                  <option value="USER">Korisnik</option>
+                  <option value="ADMIN">Administrator</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="zatvori()">Odustani</button>
+              <button type="submit" class="btn btn-primary" [disabled]="spremanje()">
+                {{ spremanje() ? 'Spremanje…' : 'Spremi' }}
+              </button>
+            </div>
+          </form>
+        } @else {
+          <form [formGroup]="izmjenaForma" (ngSubmit)="spremi()">
+            <div class="modal-body">
+              @if (greska()) { <div class="alert alert-danger">{{ greska() }}</div> }
+
+              <div class="mb-3">
+                <label class="form-label" for="email2">E-mail</label>
+                <input id="email2" type="email" class="form-control" formControlName="email"
+                       [class.is-invalid]="izmjenaForma.controls.email.touched && izmjenaForma.controls.email.invalid" />
+                @if (izmjenaForma.controls.email.touched && izmjenaForma.controls.email.invalid) {
+                  <div class="poruka-greske">Neispravna e-mail adresa.</div>
+                }
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label" for="password2">Nova lozinka</label>
+                <input id="password2" type="password" class="form-control" formControlName="password"
+                       autocomplete="new-password" placeholder="ostavite prazno da se ne mijenja"
+                       [class.is-invalid]="izmjenaForma.controls.password.touched && izmjenaForma.controls.password.invalid" />
+                @if (izmjenaForma.controls.password.touched && izmjenaForma.controls.password.invalid) {
+                  <div class="poruka-greske">Lozinka mora imati barem 8 znakova.</div>
+                }
+              </div>
+
+              @if (auth.isAdmin()) {
+                <div class="mb-0">
+                  <label class="form-label" for="role2">Uloga</label>
+                  <select id="role2" class="form-select" formControlName="role">
+                    <option value="USER">Korisnik</option>
+                    <option value="ADMIN">Administrator</option>
+                  </select>
+                </div>
+              }
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="zatvori()">Odustani</button>
+              <button type="submit" class="btn btn-primary" [disabled]="spremanje()">
+                {{ spremanje() ? 'Spremanje…' : 'Spremi' }}
+              </button>
+            </div>
+          </form>
+        }
+
+      </div>
+    </div>
+  </div>
+}

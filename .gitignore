@@ -1,0 +1,41 @@
+# ── Tajne ────────────────────────────────────────────────────────────────────
+# Nikad ne commitati: sadrzi lozinku baze, JWT secret i adresu MQTT brokera.
+.env
+.env.local
+*.env
+!.env.example
+
+# ── Node ─────────────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.npm/
+
+# ── Build izlazi ─────────────────────────────────────────────────────────────
+dist/
+# Kopija Angular builda koju nginx sluzi na posluzitelju.
+frontend-dist/
+build/
+frontend/.angular/
+*.tsbuildinfo
+
+# ── Prisma ───────────────────────────────────────────────────────────────────
+# Migracije SE commitaju (dio su sheme), generirani klijent ne.
+backend/prisma/generated/
+
+# ── Logovi i privremeno ──────────────────────────────────────────────────────
+logs/
+*.log
+tmp/
+.cache/
+
+# ── Alati i IDE ──────────────────────────────────────────────────────────────
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+
+# ── OS ───────────────────────────────────────────────────────────────────────
+Thumbs.db
+Desktop.ini
+.DS_Store

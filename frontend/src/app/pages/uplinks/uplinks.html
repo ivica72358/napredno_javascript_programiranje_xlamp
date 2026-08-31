@@ -1,0 +1,160 @@
+<h1 class="h4 mb-3">Telemetrija</h1>
+
+@if (greska()) { <div class="alert alert-danger">{{ greska() }}</div> }
+
+<div class="card">
+  <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <div class="d-flex align-items-center gap-2">
+      <select class="form-select form-select-sm filtar" (change)="filtriraj($any($event.target).value)">
+        <option value="">Sve svjetiljke</option>
+        @for (lampa of lampe(); track lampa.id) {
+          <option [value]="lampa.id">{{ lampa.name }}</option>
+        }
+      </select>
+      <button class="btn btn-secondary btn-sm" (click)="ucitaj()">Osvježi</button>
+    </div>
+
+    <div class="d-flex align-items-center gap-2">
+      @if (novih() > 0) {
+        <span class="badge uspjeh">{{ novih() }} novih</span>
+      }
+      <span class="veza-stanje small" [class.spojen]="realtime.connected()">
+        {{ realtime.connected() ? 'Prati uživo' : 'Bez žive veze' }}
+      </span>
+    </div>
+  </div>
+
+  @if (ucitavanje()) {
+    <div class="prazno">Učitavanje…</div>
+  } @else if (uplinkovi().length === 0) {
+    <div class="prazno">
+      Još nema telemetrije. Uređaji javljaju povremeno — poruke stižu same,
+      a možete ih i zatražiti naredbom.
+    </div>
+  } @else {
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Svjetiljka</th>
+            <th>Vrsta</th>
+            <th>Sadržaj</th>
+            <th>Signal</th>
+            <th>Primljeno</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of uplinkovi(); track u.id) {
+            <tr class="klikabilan" (click)="prosiri(u.id)">
+              <td class="strelica">{{ prosiren() === u.id ? '▾' : '▸' }}</td>
+              <td>{{ u.lamp?.name }}</td>
+              <td><span class="badge info">{{ u.decoded?.label }}</span></td>
+              <td>{{ u.decoded | uplinkSummary }}</td>
+              <td>
+                <span class="badge" [class]="u.rssi | signalQuality:'razina'">
+                  {{ u.rssi | signalQuality }}
+                </span>
+              </td>
+              <td class="text-body-secondary text-nowrap">{{ u.receivedAt | lastSeen }}</td>
+              <td>
+                <button class="btn btn-outline-danger btn-sm"
+                        (click)="$event.stopPropagation(); obrisi(u.id)">Obriši</button>
+              </td>
+            </tr>
+
+            @if (prosiren() === u.id) {
+              <tr class="detalj">
+                <td colspan="7">
+                  <div class="row g-4">
+
+                    <div class="col-md-6">
+                      <h3 class="naslovak">Zapis</h3>
+                      <dl class="row mb-0 small">
+                        <dt class="col-5 fw-normal text-body-secondary">devEUI</dt>
+                        <dd class="col-7 mb-1 hex">{{ u.lamp?.devEui }}</dd>
+
+                        <dt class="col-5 fw-normal text-body-secondary">Port</dt>
+                        <dd class="col-7 mb-1">{{ u.port ?? '—' }}</dd>
+
+                        <dt class="col-5 fw-normal text-body-secondary">RSSI</dt>
+                        <dd class="col-7 mb-1">{{ u.rssi ?? '—' }} dBm</dd>
+
+                        <dt class="col-5 fw-normal text-body-secondary">SNR</dt>
+                        <dd class="col-7 mb-1">{{ u.snr ?? '—' }} dB</dd>
+
+                        <dt class="col-5 fw-normal text-body-secondary">Payload</dt>
+                        <dd class="col-7 mb-0 hex prelomi">{{ u.payload }}</dd>
+                      </dl>
+                    </div>
+
+                    <div class="col-md-6">
+                      <h3 class="naslovak">Dekodirano</h3>
+                      @switch (u.decoded?.type) {
+                        @case ('STATUS') {
+                          <dl class="row mb-0 small">
+                            <dt class="col-5 fw-normal text-body-secondary">Svjetlina</dt>
+                            <dd class="col-7 mb-1">{{ u.decoded?.brightness | brightness }}</dd>
+
+                            <dt class="col-5 fw-normal text-body-secondary">Profil</dt>
+                            <dd class="col-7 mb-1">{{ u.decoded?.profileIndex }}</dd>
+
+                            <dt class="col-5 fw-normal text-body-secondary">Temperatura</dt>
+                            <dd class="col-7 mb-1">
+                              @if (u.decoded?.temperature !== null) { {{ u.decoded?.temperature }} °C }
+                              @else { <span class="badge ERROR">DALI greška</span> }
+                            </dd>
+
+                            <dt class="col-5 fw-normal text-body-secondary">Vrijeme uređaja</dt>
+                            <dd class="col-7 mb-0">{{ u.decoded?.deviceTime }}</dd>
+                          </dl>
+                        }
+                        @case ('ENERGY') {
+                          <dl class="row mb-0 small">
+                            @for (v of energetskeVrijednosti(u); track v.label) {
+                              <dt class="col-7 fw-normal text-body-secondary">{{ v.label }}</dt>
+                              <dd class="col-5 mb-1">{{ v.display }}</dd>
+                            }
+                          </dl>
+                        }
+                        @case ('ALARM') {
+                          @if (u.decoded?.cleared) {
+                            <span class="badge uspjeh">Greška otklonjena</span>
+                          } @else {
+                            <ul class="greske small mb-0">
+                              @for (g of u.decoded?.errors; track g) { <li>{{ g }}</li> }
+                            </ul>
+                          }
+                        }
+                        @case ('BOOT') {
+                          <dl class="row mb-0 small">
+                            <dt class="col-5 fw-normal text-body-secondary">Firmware</dt>
+                            <dd class="col-7 mb-1">{{ u.decoded?.firmwareVersion }}</dd>
+
+                            <dt class="col-5 fw-normal text-body-secondary">Svjetlina</dt>
+                            <dd class="col-7 mb-1">{{ u.decoded?.brightness | brightness }}</dd>
+
+                            <dt class="col-5 fw-normal text-body-secondary">Profil</dt>
+                            <dd class="col-7 mb-1">{{ u.decoded?.profileIndex }}</dd>
+
+                            <dt class="col-5 fw-normal text-body-secondary">Prosječna noć</dt>
+                            <dd class="col-7 mb-0">{{ u.decoded?.meanNightDurationSeconds }} s</dd>
+                          </dl>
+                        }
+                        @default {
+                          <p class="text-body-secondary small mb-0">Format poruke nije prepoznat.</p>
+                        }
+                      }
+                    </div>
+
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

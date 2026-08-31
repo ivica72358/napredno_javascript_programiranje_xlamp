@@ -1,0 +1,205 @@
+@if (ucitavanje()) {
+  <div class="prazno">Učitavanje…</div>
+} @else if (!lampa()) {
+  <div class="alert alert-danger">{{ greska() ?? 'Svjetiljka nije pronađena.' }}</div>
+  <a class="btn btn-secondary btn-sm" routerLink="/lampe">Natrag na popis</a>
+} @else {
+
+  <nav aria-label="Putanja" class="mb-2">
+    <ol class="breadcrumb mb-0 small">
+      <li class="breadcrumb-item"><a routerLink="/lampe">Svjetiljke</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ lampa()!.name }}</li>
+    </ol>
+  </nav>
+
+  <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+    <h1 class="h4 mb-0">{{ lampa()!.name }}</h1>
+    <span class="badge" [class]="lampa()!.status">{{ lampa()!.status }}</span>
+    <span class="hex">{{ lampa()!.devEui }}</span>
+  </div>
+
+  @if (poruka()) { <div class="alert alert-success">{{ poruka() }}</div> }
+  @if (greska()) { <div class="alert alert-danger">{{ greska() }}</div> }
+
+  <div class="row g-3">
+
+    <!-- ── Stanje ─────────────────────────────────────────────────────── -->
+    <div class="col-lg-4">
+      <div class="card h-100">
+        <div class="card-header"><h2 class="h6 mb-0">Stanje</h2></div>
+        <div class="card-body">
+          <dl class="row mb-0 small">
+            <dt class="col-6 text-body-secondary fw-normal">Svjetlina</dt>
+            <dd class="col-6 mb-2">{{ lampa()!.currentBrightness | brightness }}</dd>
+
+            <dt class="col-6 text-body-secondary fw-normal">Zadnje javljanje</dt>
+            <dd class="col-6 mb-2">{{ lampa()!.lastSeen | lastSeen }}</dd>
+
+            <dt class="col-6 text-body-secondary fw-normal">Širina</dt>
+            <dd class="col-6 mb-2">{{ lampa()!.latitude }}</dd>
+
+            <dt class="col-6 text-body-secondary fw-normal">Dužina</dt>
+            <dd class="col-6 mb-2">{{ lampa()!.longitude }}</dd>
+
+            @if (lampa()!.owner) {
+              <dt class="col-6 text-body-secondary fw-normal">Vlasnik</dt>
+              <dd class="col-6 mb-0">{{ lampa()!.owner!.username }}</dd>
+            }
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Upravljanje ────────────────────────────────────────────────── -->
+    <div class="col-lg-8">
+      <div class="card h-100">
+        <div class="card-header"><h2 class="h6 mb-0">Upravljanje</h2></div>
+        <div class="card-body">
+          @if (system.dryRun()) {
+            <div class="alert alert-warning">
+              Probni način rada — naredba se zapisuje, ali ne odlazi uređaju.
+            </div>
+          }
+
+          <form [formGroup]="forma" (ngSubmit)="posalji()">
+            <div class="row g-3 align-items-end">
+              <div class="col-sm-6">
+                <label class="form-label" for="command">Naredba</label>
+                <select id="command" class="form-select" formControlName="command"
+                        (change)="odustani()">
+                  @for (n of naredbe; track n.vrijednost) {
+                    <option [value]="n.vrijednost">{{ n.naziv }}</option>
+                  }
+                </select>
+              </div>
+
+              @if (trebaArgument) {
+                <div class="col-sm-6">
+                  <label class="form-label" for="argument">
+                    Svjetlina: {{ forma.controls.argument.value }} %
+                  </label>
+                  <input id="argument" type="range" class="form-range" min="0" max="100" step="1"
+                         formControlName="argument" />
+                </div>
+              }
+            </div>
+
+            @if (cekaPotvrdu()) {
+              <!-- Drugi klik za naredbe koje stvarno gase ili pale svjetiljku.
+                   LoRaWAN nema opoziv poslanog okvira. -->
+              <div class="alert alert-warning d-flex flex-wrap align-items-center gap-2 mt-3 mb-0">
+                <span class="flex-grow-1">
+                  <strong>{{ odabrana?.naziv }}</strong> mijenja stanje svjetiljke
+                  <strong>{{ lampa()!.name }}</strong>. Poslati?
+                </span>
+                <button type="submit" class="btn btn-primary btn-sm" [disabled]="salje()">
+                  {{ salje() ? 'Slanje…' : 'Da, pošalji' }}
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" (click)="odustani()">
+                  Odustani
+                </button>
+              </div>
+            } @else {
+              <button type="submit" class="btn btn-primary mt-3" [disabled]="salje()">
+                {{ salje() ? 'Slanje…' : 'Pošalji' }}
+              </button>
+            }
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Telemetrija ────────────────────────────────────────────────── -->
+    <div class="col-xl-7">
+      <div class="card h-100">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <h2 class="h6 mb-0">Zadnja telemetrija</h2>
+          <a class="small" routerLink="/telemetrija">Sve →</a>
+        </div>
+
+        @if (uplinkovi().length === 0) {
+          <div class="prazno">Ova svjetiljka se još nije javila.</div>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>Vrijeme</th>
+                  <th>Poruka</th>
+                  <th>Signal</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (u of uplinkovi(); track u.id) {
+                  <tr>
+                    <td class="text-body-secondary text-nowrap">{{ u.receivedAt | lastSeen }}</td>
+                    <td>
+                      <div>{{ u.decoded?.label ?? '—' }}</div>
+                      <small class="text-body-secondary">{{ u.decoded | uplinkSummary }}</small>
+                    </td>
+                    <td>
+                      <span class="badge" [class]="u.rssi | signalQuality:'razina'">
+                        {{ u.rssi | signalQuality:'razina' }}
+                      </span>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- ── Naredbe ────────────────────────────────────────────────────── -->
+    <div class="col-xl-5">
+      <div class="card h-100">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <h2 class="h6 mb-0">Poslane naredbe</h2>
+          <a class="small" routerLink="/naredbe">Sve →</a>
+        </div>
+
+        @if (naredbePovijest().length === 0) {
+          <div class="prazno">Nijedna naredba još nije poslana.</div>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>Naredba</th>
+                  <th>Kada</th>
+                  <th>Stanje</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (d of naredbePovijest(); track d.id) {
+                  <tr>
+                    <td>
+                      {{ nazivNaredbe(d.command) }}
+                      @if (d.argument !== null) {
+                        <span class="text-body-secondary">({{ d.argument }} %)</span>
+                      }
+                    </td>
+                    <td class="text-body-secondary text-nowrap">{{ d.createdAt | lastSeen }}</td>
+                    <td>
+                      @if (d.cancelled) {
+                        <span class="badge UNKNOWN">Otkazano</span>
+                      } @else if (d.isSent) {
+                        <span class="badge ONLINE">Poslano</span>
+                      } @else if (d.error) {
+                        <span class="badge OFFLINE" [title]="d.error">Greška</span>
+                      } @else {
+                        <span class="badge nepoznat">U redu čeka</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+
+  </div>
+}

@@ -1,0 +1,161 @@
+// Model podataka za upravljanje javnom rasvjetom preko LoRaWAN-a.
+//
+// Namjerno pojednostavljen u odnosu na produkcijsku X-lamp platformu: tamo Lamp
+// ima desetke polja i 14 statusa, a Downlink ~30 polja (verify ciklus, batch,
+// campaign). Ovdje su zadrzani samo pojmovi koji nose funkcionalnost koju
+// aplikacija stvarno radi - prikaz flote, telemetrija i slanje naredbi.
+
+generator client {
+  provider = "prisma-client-js"
+  // Lokalno je Windows, a posluzitelj je Linux. Bez izricitog popisa Prisma
+  // generira izvrsni modul samo za platformu na kojoj se build vrti, pa deploy
+  // padne na "Query engine binary for current platform not found".
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Enumeracije
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Razdvajanje dozvola: ADMIN vidi i mijenja sve, USER samo svoje lampe.
+enum Role {
+  USER
+  ADMIN
+}
+
+/// Grubi izvedeni status lampe. Racuna se iz vremena zadnjeg uplinka i
+/// prijavljene svjetline - nije podatak koji uredaj salje.
+enum LampStatus {
+  UNKNOWN /// jos nije javila nista
+  ONLINE  /// javila se unutar OFFLINE_AFTER_MINUTES
+  OFFLINE /// suti duze od praga
+  ERROR   /// javlja se, ali prijavljuje gresku (npr. DALI)
+}
+
+/// Naredbe koje aplikacija zna poslati. Payload i port se izvode iz ovoga u
+/// src/lib/codec.js - enum postoji da se u bazu ne moze upisati proizvoljna
+/// naredba i da se povijest naredbi da citati bez dekodiranja hexa.
+enum CommandType {
+  TURN_ON /// upali na 100%
+  TURN_OFF /// ugasi
+  SET_BRIGHTNESS /// postavi svjetlinu, argument je postotak 0-100
+  REQUEST_STATUS /// zatrazi status poruku (uredaj odgovara uplinkom 01)
+  REQUEST_ENERGY /// zatrazi energetsku poruku (uredaj odgovara uplinkom 02)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Modeli
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique @db.VarChar(50)
+  email     String   @unique @db.VarChar(150)
+  /// bcrypt hash, nikad lozinka u citljivom obliku
+  password  String   @db.VarChar(60)
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lamps            Lamp[]
+  createdDownlinks Downlink[] @relation("DownlinkAuthor")
+
+  @@map("users")
+}
+
+model Lamp {
+  id   Int    @id @default(autoincrement())
+  name String @db.VarChar(100)
+
+  /// Jedinstveni kljuc modema na LoRaWAN mrezi - 16 hex znakova.
+  /// Po njemu se dolazni MQTT uplink vezuje uz lampu, pa mora biti unique.
+  devEui String @unique @db.VarChar(16)
+
+  /// Float, ne Decimal: GPS na 6 decimala stane u double bez gubitka, a
+  /// Decimal bi kroz Prismu dolazio kao objekt koji se ne serijalizira u JSON.
+  latitude  Float
+  longitude Float
+
+  /// Zadnja poznata svjetlina u postocima (0-100). NULL = jos nije javila.
+  /// Uredaj salje bajt 0-255; pretvorba je u codec.js.
+  currentBrightness Int?
+
+  status   LampStatus @default(UNKNOWN)
+  lastSeen DateTime?
+
+  ownerId Int
+  owner   User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  uplinks   Uplink[]
+  downlinks Downlink[]
+
+  @@index([ownerId])
+  @@index([status])
+  @@map("lamps")
+}
+
+/// Telemetrija koju lampa salje. Cuva se SIROVI payload - dekodiranje radi
+/// custom Angular pipe, tako da promjena dekodera ne trazi migraciju podataka.
+model Uplink {
+  id     Int  @id @default(autoincrement())
+  lampId Int
+  lamp   Lamp @relation(fields: [lampId], references: [id], onDelete: Cascade)
+
+  /// Hex string kakav je stigao s mreze (base64 iz ChirpStacka se dekodira pri unosu).
+  payload String @db.VarChar(512)
+  port    Int?
+
+  /// Kvaliteta veze koju je izmjerio gateway za OVAJ uplink.
+  rssi Int?
+  snr  Float?
+
+  receivedAt DateTime @default(now())
+
+  /// Pokriva "zadnjih N uplinkova za lampu" - jedini upit koji lista i detalj rade.
+  @@index([lampId, receivedAt(sort: Desc)])
+  @@map("uplinks")
+}
+
+/// Naredba prema lampi. Red se stvara odmah, a salje se na MQTT asinkrono -
+/// zato isSent/sentAt/error, a ne samo "poslano".
+model Downlink {
+  id     Int  @id @default(autoincrement())
+  lampId Int
+  lamp   Lamp @relation(fields: [lampId], references: [id], onDelete: Cascade)
+
+  command CommandType
+  /// Argument naredbe: postotak svjetline za SET_BRIGHTNESS, inace NULL.
+  argument Int?
+
+  /// Izvedeni hex payload i LoRaWAN port - ono sto stvarno ide na mrezu.
+  payload String @db.VarChar(512)
+  port    Int
+
+  isSent Boolean   @default(false)
+  sentAt DateTime?
+  /// Poruka mreze ako slanje nije uspjelo.
+  error String?
+
+  /// Otkazano prije slanja. Red se NE brise nego oznacava, da povijest naredbi
+  /// moze reci "ovo je otkazano" umjesto da naredba izgleda kao da nije postojala.
+  /// Smisleno samo dok je isSent = false: LoRaWAN nema opoziv poslanog okvira.
+  cancelled   Boolean   @default(false)
+  cancelledAt DateTime?
+
+  createdById Int?
+  createdBy   User? @relation("DownlinkAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([lampId, createdAt(sort: Desc)])
+  @@index([isSent, cancelled])
+  @@map("downlinks")
+}

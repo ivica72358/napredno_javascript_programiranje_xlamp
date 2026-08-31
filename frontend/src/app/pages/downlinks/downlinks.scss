@@ -1,0 +1,13 @@
+/* Raspored drzi Bootstrapov grid; ovdje samo poruka o gresci u tablici. */
+
+.form-range {
+  accent-color: var(--xl-naglasak);
+}
+
+/* Poruka mreze zna biti duga - ogranicena je da ne rastegne stupac. */
+.greska-tekst {
+  margin-top: 0.25rem;
+  font-size: 0.6875rem;
+  color: var(--xl-greska);
+  max-width: 220px;
+}

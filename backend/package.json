@@ -1,0 +1,39 @@
+{
+  "name": "xlamp-ng-backend",
+  "version": "1.0.0",
+  "description": "REST API i ChirpStack MQTT most za upravljanje javnom rasvjetom",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "dev:dry": "node --watch src/index.js --dry-run",
+    "start": "node src/index.js",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "db:seed": "node prisma/seed.js",
+    "test:smoke": "node tests/smoke.mjs",
+    "db:export": "node scripts/export-baze.js",
+    "postinstall": "prisma generate",
+    "build": "prisma migrate deploy"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.1.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mqtt": "^5.10.3",
+    "socket.io": "^4.8.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "prisma": "^6.1.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "overrides": {
+    "deepmerge-ts": "^8.0.0"
+  }
+}

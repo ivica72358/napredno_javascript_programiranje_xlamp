@@ -1,0 +1,154 @@
+<h1 class="h4 mb-3">Svjetiljke</h1>
+
+@if (poruka()) { <div class="alert alert-success">{{ poruka() }}</div> }
+@if (greska() && obrazacZa() === null) { <div class="alert alert-danger">{{ greska() }}</div> }
+
+<div class="card">
+  <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <div class="d-flex align-items-center gap-2">
+      <input class="form-control form-control-sm pretraga" placeholder="Traži po nazivu ili devEUI…"
+             #polje (keyup.enter)="trazi(polje.value)" />
+      <button class="btn btn-secondary btn-sm" (click)="trazi(polje.value)">Traži</button>
+      @if (pretraga()) {
+        <button class="btn btn-secondary btn-sm" (click)="polje.value=''; trazi('')">Poništi</button>
+      }
+    </div>
+    <button class="btn btn-primary btn-sm" (click)="nova()">+ Nova svjetiljka</button>
+  </div>
+
+  @if (ucitavanje()) {
+    <div class="prazno">Učitavanje…</div>
+  } @else if (lampe().length === 0) {
+    <div class="prazno">
+      @if (pretraga()) { Nema svjetiljke koja odgovara pretrazi. }
+      @else { Još nema nijedne svjetiljke. }
+    </div>
+  } @else {
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Naziv</th>
+            <th>devEUI</th>
+            <th>Stanje</th>
+            <th>Svjetlina</th>
+            <th>Zadnje javljanje</th>
+            <th>Lokacija</th>
+            @if (auth.isAdmin()) { <th>Vlasnik</th> }
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (lampa of lampe(); track lampa.id) {
+            <tr>
+              <td>
+                <!-- Naziv vodi na detalj umjesto klika po cijelom retku: redak
+                     sadrzi i gumbe za brisanje, pa bi promasaj gumba otvarao
+                     ekran umjesto da ne napravi nista. -->
+                <a [routerLink]="['/lampe', lampa.id]" class="fw-medium">{{ lampa.name }}</a>
+              </td>
+              <td class="hex">{{ lampa.devEui }}</td>
+              <td><span class="badge" [class]="lampa.status">{{ lampa.status }}</span></td>
+              <td>{{ lampa.currentBrightness | brightness }}</td>
+              <td>{{ lampa.lastSeen | lastSeen }}</td>
+              <td class="text-body-secondary">{{ lampa.latitude }}, {{ lampa.longitude }}</td>
+              @if (auth.isAdmin()) { <td class="text-body-secondary">{{ lampa.owner?.username }}</td> }
+              <td>
+                @if (brisemId() === lampa.id) {
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="text-body-secondary small">Sigurno?</span>
+                    <button class="btn btn-outline-danger btn-sm" (click)="obrisi(lampa.id)">Da</button>
+                    <button class="btn btn-secondary btn-sm" (click)="odustaniOdBrisanja()">Ne</button>
+                  </div>
+                } @else {
+                  <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-secondary btn-sm" (click)="uredi(lampa)">Uredi</button>
+                    <button class="btn btn-outline-danger btn-sm" (click)="potvrdiBrisanje(lampa.id)">Obriši</button>
+                  </div>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (ukupnoStranica() > 1) {
+      <div class="card-footer d-flex align-items-center justify-content-between">
+        <span class="text-body-secondary small">Ukupno {{ ukupno() }}</span>
+        <div class="d-flex align-items-center gap-2">
+          <button class="btn btn-secondary btn-sm" [disabled]="stranica() === 1"
+                  (click)="naStranicu(stranica() - 1)">‹</button>
+          <span class="text-body-secondary small">{{ stranica() }} / {{ ukupnoStranica() }}</span>
+          <button class="btn btn-secondary btn-sm" [disabled]="stranica() === ukupnoStranica()"
+                  (click)="naStranicu(stranica() + 1)">›</button>
+        </div>
+      </div>
+    }
+  }
+</div>
+
+@if (obrazacZa() !== null) {
+  <div class="modal-backdrop fade show"></div>
+  <div class="modal fade show d-block" tabindex="-1" (click)="zatvori()">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"
+         (click)="$event.stopPropagation()">
+      <div class="modal-content">
+
+        <div class="modal-header">
+          <h2 class="modal-title h5">
+            {{ obrazacZa() === 0 ? 'Nova svjetiljka' : 'Uredi svjetiljku' }}
+          </h2>
+          <button type="button" class="btn-close" aria-label="Zatvori" (click)="zatvori()"></button>
+        </div>
+
+        <form [formGroup]="forma" (ngSubmit)="spremi()">
+          <div class="modal-body">
+            @if (greska()) { <div class="alert alert-danger">{{ greska() }}</div> }
+
+            <div class="mb-3">
+              <label class="form-label" for="name">Naziv</label>
+              <input id="name" class="form-control" formControlName="name"
+                     [class.is-invalid]="forma.controls.name.touched && forma.controls.name.invalid" />
+              @if (forma.controls.name.touched && forma.controls.name.invalid) {
+                <div class="poruka-greske">Naziv je obavezan.</div>
+              }
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="devEui">devEUI</label>
+              <input id="devEui" class="form-control" formControlName="devEui" placeholder="8cf95720001e223d"
+                     [class.is-invalid]="forma.controls.devEui.touched && forma.controls.devEui.invalid" />
+              @if (forma.controls.devEui.touched && forma.controls.devEui.invalid) {
+                <div class="poruka-greske">Točno 16 heksadekadskih znamenki.</div>
+              }
+            </div>
+
+            <div class="row g-3">
+              <div class="col-sm-6">
+                <label class="form-label" for="latitude">Zemljopisna širina</label>
+                <input id="latitude" type="number" step="0.000001" class="form-control"
+                       formControlName="latitude"
+                       [class.is-invalid]="forma.controls.latitude.touched && forma.controls.latitude.invalid" />
+              </div>
+              <div class="col-sm-6">
+                <label class="form-label" for="longitude">Zemljopisna dužina</label>
+                <input id="longitude" type="number" step="0.000001" class="form-control"
+                       formControlName="longitude"
+                       [class.is-invalid]="forma.controls.longitude.touched && forma.controls.longitude.invalid" />
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="zatvori()">Odustani</button>
+            <button type="submit" class="btn btn-primary" [disabled]="spremanje()">
+              {{ spremanje() ? 'Spremanje…' : 'Spremi' }}
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+}
